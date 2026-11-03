@@ -1,46 +1,30 @@
 // =========================================================
-// Opening: soft flames rise and fill the screen, then settle
-// while The Addict logo lights up in its place.
-// WebGL shader (GPU, smooth on phones) with a CSS fallback.
+// Opening animation, in the style of the logo:
+//   1. flat red flames (the logo's own flame shape) rise and swing in a loop
+//   2. the side flames sink, the big centre flame flies into the logo
+//   3. it lands as the logo flame, then "The" and "ADDICT" appear
 // Plays once per visit (session); add ?intro=1 to replay.
 // =========================================================
 import { reducedMotion, lockScroll, unlockScroll } from './ui.js';
 
 const SEEN_KEY = 'addict-intro-seen';
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
-const VERT = `attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
-const FRAG = `
-precision mediump float;
-uniform vec2 uRes;
-uniform float uTime;
-uniform float uLevel;
-float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
-float noise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.-2.*f);
-  float a=hash(i),b=hash(i+vec2(1.,0.)),c=hash(i+vec2(0.,1.)),d=hash(i+vec2(1.,1.));
-  return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}
-float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*noise(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return v;}
-void main(){
-  vec2 uv=gl_FragCoord.xy/uRes;
-  vec2 q=vec2(uv.x*uRes.x/uRes.y,uv.y);
-  float t=uTime;
-  float n1=fbm(q*vec2(4.,3.)-vec2(0.,t*1.6));
-  float n=fbm(q*vec2(6.5,4.5)+vec2(n1*1.3,-t*2.8));
-  float h=uv.y/max(uLevel,.0001);
-  float heat=clamp(n*1.3-h*.95+.12,0.,1.);
-  heat=pow(heat,1.15);
-  vec3 ember=vec3(.26,.02,.02);
-  vec3 red=vec3(.86,.1,.12);
-  vec3 orange=vec3(.98,.38,.1);
-  vec3 amber=vec3(1.,.66,.28);
-  vec3 col=mix(ember,red,smoothstep(.12,.42,heat));
-  col=mix(col,orange,smoothstep(.45,.75,heat));
-  col=mix(col,amber,smoothstep(.78,1.,heat)*.7);
-  float a=smoothstep(.04,.3,heat)*.94;
-  gl_FragColor=vec4(col*a,a);
-}`;
-
-const easeOut = (x) => 1 - Math.pow(1 - x, 3);
-const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+// Flame field: x = % from left, h = height in vh, c = colour, d = swing speed (s), delay (s), flip = mirrored
+const FIELD = [
+  { x: 4, h: 40, c: '#6d0a0e', d: 1.3, delay: 0.0, flip: true },
+  { x: 18, h: 54, c: '#930d13', d: 1.12, delay: 0.1 },
+  { x: 33, h: 44, c: '#6d0a0e', d: 1.24, delay: 0.05, flip: true },
+  { x: 67, h: 46, c: '#6d0a0e', d: 1.2, delay: 0.08 },
+  { x: 82, h: 56, c: '#930d13', d: 1.08, delay: 0.14, flip: true },
+  { x: 96, h: 42, c: '#6d0a0e', d: 1.34, delay: 0.03 },
+  { x: 11, h: 28, c: '#c3141a', d: 0.96, delay: 0.22 },
+  { x: 42, h: 24, c: '#b01218', d: 1.02, delay: 0.26, flip: true },
+  { x: 58, h: 26, c: '#b01218', d: 0.98, delay: 0.3 },
+  { x: 89, h: 30, c: '#c3141a', d: 0.94, delay: 0.2, flip: true },
+];
+const HERO_SWING = 1.1; // seconds per swing loop of the big flame
+const LOOPS = 2;        // how many full swings before it flies to the logo
 
 function shouldPlay() {
   try {
@@ -50,48 +34,63 @@ function shouldPlay() {
 }
 function markSeen() { try { sessionStorage.setItem(SEEN_KEY, '1'); } catch { /* ignore */ } }
 
-function setupGL(canvas) {
-  const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false, powerPreference: 'low-power' });
-  if (!gl) return null;
-  const sh = (type, src) => {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
-  };
-  const vs = sh(gl.VERTEX_SHADER, VERT);
-  const fs = sh(gl.FRAGMENT_SHADER, FRAG);
-  if (!vs || !fs) return null;
-  const prog = gl.createProgram();
-  gl.attachShader(prog, vs);
-  gl.attachShader(prog, fs);
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
-  gl.useProgram(prog);
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-  const loc = gl.getAttribLocation(prog, 'p');
-  gl.enableVertexAttribArray(loc);
-  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  return {
-    gl,
-    uRes: gl.getUniformLocation(prog, 'uRes'),
-    uTime: gl.getUniformLocation(prog, 'uTime'),
-    uLevel: gl.getUniformLocation(prog, 'uLevel'),
-  };
+function flameSvg(d, box, color) {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`);
+  svg.setAttribute('aria-hidden', 'true');
+  svg.style.aspectRatio = `${box.width} / ${box.height}`;
+  const path = document.createElementNS(SVG_NS, 'path');
+  path.setAttribute('d', d);
+  path.setAttribute('fill', color);
+  path.setAttribute('fill-rule', 'evenodd');
+  svg.append(path);
+  return svg;
+}
+
+function flame(d, box, f, extraClass = '') {
+  const wrap = document.createElement('div');
+  wrap.className = `iflame ${extraClass}${f.flip ? ' iflame--flip' : ''}`;
+  wrap.style.setProperty('--x', f.x);
+  wrap.style.setProperty('--h', f.h);
+  wrap.style.setProperty('--d', `${f.d}s`);
+  wrap.style.setProperty('--delay', `${f.delay}s`);
+  const rise = document.createElement('div');
+  rise.className = 'iflame__rise';
+  const mirror = document.createElement('div');
+  mirror.className = 'iflame__mirror';
+  mirror.append(flameSvg(d, box, f.c));
+  rise.append(mirror);
+  wrap.append(rise);
+  return wrap;
+}
+
+function embers(stage) {
+  const box = document.createElement('div');
+  box.className = 'embers';
+  stage.append(box);
+  for (let i = 0; i < 12; i += 1) {
+    const e = document.createElement('span');
+    e.className = 'ember';
+    e.style.setProperty('--x', (5 + Math.random() * 90).toFixed(1));
+    e.style.setProperty('--s', `${(4 + Math.random() * 6).toFixed(1)}px`);
+    e.style.setProperty('--d', `${(1.6 + Math.random() * 1.2).toFixed(2)}s`);
+    e.style.setProperty('--delay', `${(0.3 + Math.random() * 1.4).toFixed(2)}s`);
+    e.style.setProperty('--dx', `${(Math.random() * 60 - 30).toFixed(0)}px`);
+    box.append(e);
+  }
 }
 
 export function runIntro({ onDone } = {}) {
   const intro = document.getElementById('intro');
   const body = document.body;
+  const logoFlame = document.querySelector('.hero__logo .logo-flame');
   const finishReady = () => {
-    body.classList.remove('is-intro', 'logo-in');
+    body.classList.remove('is-intro', 'logo-in', 'flame-flew');
     body.classList.add('is-ready');
     if (onDone) onDone();
   };
 
-  if (!intro || !shouldPlay()) {
+  if (!intro || !logoFlame || !shouldPlay()) {
     intro?.remove();
     finishReady();
     return;
@@ -101,101 +100,100 @@ export function runIntro({ onDone } = {}) {
   window.scrollTo(0, 0);
   lockScroll();
 
-  const canvas = intro.querySelector('canvas');
+  const stage = intro.querySelector('[data-intro-stage]');
   const skipBtn = intro.querySelector('.intro__skip');
-  let raf = 0;
+  const timers = [];
+  const later = (fn, ms) => timers.push(setTimeout(fn, ms));
   let ended = false;
   let logoAt = 0;
+
   const showLogo = () => {
     if (logoAt) return;
     logoAt = performance.now();
     body.classList.add('logo-in');
   };
-  const timers = [];
-  const later = (fn, ms) => timers.push(setTimeout(fn, ms));
 
   const end = () => {
     if (ended) return;
     ended = true;
-    cancelAnimationFrame(raf);
     timers.forEach(clearTimeout);
     showLogo();
     intro.classList.add('is-done');
     unlockScroll();
-    // let the logo animation finish, then hand over to the calm idle state
-    const wait = Math.max(450, 1250 - (performance.now() - logoAt));
-    setTimeout(() => {
-      finishReady();
-      intro.remove();
-    }, wait);
+    const wait = Math.max(450, 1150 - (performance.now() - logoAt));
+    setTimeout(() => { finishReady(); intro.remove(); }, wait);
   };
   skipBtn?.addEventListener('click', end);
 
   // Reduced motion: no flames, just a gentle logo fade.
   if (reducedMotion()) {
-    canvas?.remove();
     later(showLogo, 100);
     later(end, 900);
     return;
   }
 
-  // Timeline (seconds)
-  const RISE = 1.0;
-  const HOLD = 0.85;
-  const FALL = 1.15;
-  const LOGO_AT = RISE + HOLD - 0.1;
-  const TOTAL = RISE + HOLD + FALL;
-  const PEAK = 2.05; // flame height: > 2 fills the whole screen
+  // Build the flames from the logo's own flame shape
+  const d = logoFlame.getAttribute('d');
+  const box = logoFlame.getBBox();
+  const field = FIELD.map((f) => flame(d, box, f, 'iflame--side'));
+  stage.append(...field);
+  embers(stage);
 
-  const ctx = canvas ? setupGL(canvas) : null;
-  if (!ctx) {
-    // CSS fallback: a warm glow rising and fading
-    canvas?.remove();
-    const glow = document.createElement('div');
-    glow.className = 'intro__glow';
-    intro.prepend(glow);
-    requestAnimationFrame(() => glow.classList.add('is-up'));
-    later(() => { showLogo(); glow.classList.add('is-fading'); }, LOGO_AT * 1000);
-    later(end, (TOTAL + 0.2) * 1000);
-    return;
-  }
+  const hero = flame(d, box, { x: 0, h: 0, c: '#EC1F26', d: HERO_SWING, delay: 0.15 }, 'iflame--hero');
+  stage.append(hero);
+  const heroSvg = hero.querySelector('svg');
 
-  const { gl, uRes, uTime, uLevel } = ctx;
-  const resize = () => {
-    const scale = 0.5; // render at half resolution: flames are soft anyway, and it's much lighter
-    const w = Math.max(2, Math.round(window.innerWidth * scale));
-    const h = Math.max(2, Math.round(window.innerHeight * scale));
-    if (canvas.width !== w || canvas.height !== h) {
-      canvas.width = w;
-      canvas.height = h;
-      gl.viewport(0, 0, w, h);
-    }
-    gl.uniform2f(uRes, w, h);
+  // size + centre the big flame in pixels (needed to fly it precisely)
+  const place = () => {
+    const vh = window.innerHeight;
+    const vw = window.innerWidth;
+    const h = Math.min(vh * 0.5, (vw * 0.78) * (box.height / box.width));
+    const w = h * (box.width / box.height);
+    hero.style.height = `${h}px`;
+    hero.style.width = `${w}px`;
+    hero.style.left = `${(vw - w) / 2}px`;
+    hero.style.top = `${vh * 0.46 - h / 2}px`;
   };
-  resize();
-  window.addEventListener('resize', resize);
+  place();
+  window.addEventListener('resize', place);
 
-  const start = performance.now();
-  const frame = (now) => {
-    const t = (now - start) / 1000;
-    let level;
-    if (t < RISE) level = easeOut(t / RISE) * PEAK;
-    else if (t < RISE + HOLD) level = PEAK;
-    else level = PEAK * (1 - easeInOut(Math.min(1, (t - RISE - HOLD) / FALL)));
-    gl.uniform1f(uTime, t);
-    gl.uniform1f(uLevel, Math.max(0.0001, level));
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    if (t >= LOGO_AT) showLogo();
-    if (t >= TOTAL) {
-      window.removeEventListener('resize', resize);
-      end();
-      return;
-    }
-    raf = requestAnimationFrame(frame);
+  // After a few swings: wait for the swing to reach its rest pose, then fly.
+  const settle = () => {
+    if (ended) return;
+    let done = false;
+    const go = () => {
+      if (done || ended) return;
+      done = true;
+      heroSvg.style.animation = 'none'; // rest pose = start of the swing loop: no jump
+      fly();
+    };
+    heroSvg.addEventListener('animationiteration', go, { once: true });
+    later(go, HERO_SWING * 1000 + 150); // safety net
   };
-  raf = requestAnimationFrame(frame);
-  // safety net: never trap the visitor in the intro
-  later(end, (TOTAL + 2) * 1000);
+
+  const fly = () => {
+    window.removeEventListener('resize', place);
+    intro.classList.add('is-settling');
+    const from = hero.getBoundingClientRect();
+    const to = logoFlame.getBoundingClientRect();
+    const s = to.height / from.height;
+    const dx = to.left - from.left;
+    const dy = to.top - from.top;
+    const anim = hero.animate([
+      { transform: 'translate(0, 0) scale(1)' },
+      { transform: `translate(${dx * 0.45}px, ${dy * 0.45 - 30}px) scale(${(1 + s) / 2 + 0.05})`, offset: 0.45 },
+      { transform: `translate(${dx}px, ${dy}px) scale(${s})` },
+    ], { duration: 900, easing: 'cubic-bezier(0.6, 0, 0.3, 1)', fill: 'forwards' });
+    anim.finished.then(() => {
+      if (ended) return;
+      body.classList.add('flame-flew');
+      showLogo();     // logo flame takes over exactly where the big flame landed
+      hero.remove();
+      later(end, 250);
+    }).catch(() => end());
+  };
+
+  later(settle, (0.15 + HERO_SWING * LOOPS) * 1000 - 300);
+  // never trap the visitor in the intro
+  later(end, 6500);
 }

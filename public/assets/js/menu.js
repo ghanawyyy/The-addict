@@ -63,11 +63,16 @@ export function card(item, { showBadge = true } = {}) {
       qty));
 }
 
-export function socialLinks() {
-  return el('div', { class: 'reach__links' },
-    el('a', { class: 'social', href: BRAND.facebook, target: '_blank', rel: 'noopener noreferrer' }, icon('facebook'), 'Facebook'),
-    el('a', { class: 'social', href: BRAND.instagram, target: '_blank', rel: 'noopener noreferrer' }, icon('instagram'), 'Instagram'),
-    el('a', { class: 'social', href: `https://wa.me/${BRAND.whatsapp}`, target: '_blank', rel: 'noopener noreferrer' }, icon('whatsapp'), BRAND.whatsappDisplay));
+// Contact "frame" cards (same style as the footer, compact size)
+export function contactCards() {
+  const mini = (cls, href, iconName, label, value) => el('a', { class: `fcard fcard--mini ${cls}`, href, target: '_blank', rel: 'noopener noreferrer' },
+    el('span', { class: 'fcard__badge' }, icon(iconName)),
+    el('span', { class: 'fcard__k' }, label),
+    el('span', { class: 'fcard__mv' }, ...value.split('.').flatMap((part, i) => (i ? [el('wbr'), `.${part}`] : [part]))));
+  return el('div', { class: 'fcards fcards--mini' },
+    mini('fcard--red', `https://wa.me/${BRAND.whatsapp}`, 'whatsapp', 'WhatsApp', '71 181 987'),
+    mini('fcard--white', BRAND.instagram, 'instagram', 'Instagram', '@theaddict.lb'),
+    mini('fcard--gray', BRAND.facebook, 'facebook', 'Facebook', 'The Addict'));
 }
 
 // ---------------------------------------------------------
@@ -140,7 +145,7 @@ export function initMenu(bg) {
       el('div', { class: 'reach' },
         el('h4', {}, `That's all in ${c.name}`),
         el('p', {}, 'Questions or special requests? Reach The Addict directly:'),
-        socialLinks(),
+        contactCards(),
         nextCat
           ? el('div', { class: 'reach__next' }, el('button', { type: 'button', class: 'btn btn--ghost btn--sm', onclick: () => goTo(i + 1, true) }, `Next: ${nextCat.name}`, icon('right', 'arrow arrow--r')))
           : el('div', { class: 'reach__next' }, el('button', { type: 'button', class: 'btn btn--ghost btn--sm', onclick: () => goTo(0, true) }, icon('left', 'arrow arrow--l'), `Back to ${CATEGORIES[0].name}`))));
