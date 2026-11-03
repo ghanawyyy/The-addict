@@ -7,6 +7,7 @@ import { store, cleanText } from './store.js';
 import { Sheet } from './sheet.js';
 import { openFlow } from './flow.js';
 import { el, icon, stepper, updateStepper, scrollToEl } from './ui.js';
+import { t, L, iso } from './i18n.js';
 
 let sheet;
 let step = 'review';
@@ -15,7 +16,7 @@ let refreshers = [];
 const draft = { name: '', address: '', note: '' }; // kept in memory only
 
 export function initCart() {
-  sheet = new Sheet('cart', { label: 'Your order' });
+  sheet = new Sheet('cart', { labelKey: 'cart.title' });
   sheet.onBack = () => { if (step === 'details') render('review', -1); else sheet.requestClose(); };
   sheet.onClosed = () => { if (unsub) unsub(); unsub = null; };
 }
@@ -32,8 +33,8 @@ function render(next, dir) {
   step = next;
   refreshers = [];
   const map = { review: stepReview, details: stepDetails, sent: stepSent };
-  const titles = { review: 'Your order', details: 'Delivery details', sent: 'Order sent' };
-  sheet.setTitle(titles[next]);
+  const titles = { review: 'cart.title', details: 'cart.detailsTitle', sent: 'cart.sentTitle' };
+  sheet.setTitle(t(titles[next]));
   sheet.showBack(next === 'details');
   const { node, foot } = map[next]();
   sheet.setStep(node, dir);
@@ -46,7 +47,7 @@ const spacer = () => el('div', { class: 'spacer' });
 // ---------- helpers ----------
 function comboLabel(cid) {
   const opt = COMBO_BY_ID.get(cid);
-  return cid.startsWith('cr-') ? `Regular combo · ${opt.name}` : `Special fries · ${opt.name}`;
+  return t(cid.startsWith('cr-') ? 'combo.regular' : 'combo.special', { name: L(opt.name) });
 }
 
 // Customer text goes on one line and without WhatsApp formatting marks,
@@ -56,23 +57,25 @@ function oneLine(text) {
 }
 
 export function buildMessage({ name, address, note }) {
-  const out = ['Hello Addict, how are you? 👋', '', '🧾 *My order:*'];
+  // Written in the language the customer is using (English or Arabic).
+  // iso() keeps numbers and prices in the right order inside Arabic lines.
+  const out = [t('msg.hello'), '', t('msg.order')];
   store.lines().forEach((line, i) => {
     const item = ITEM_BY_ID.get(line.id);
-    out.push(`${i + 1}. ${item.name} × ${line.qty} — ${money(item.price * line.qty)}`);
+    out.push(`${iso(`${i + 1}.`)} ${L(item.name)} × ${iso(line.qty)} — ${iso(money(item.price * line.qty))}`);
     for (const [cid, n] of Object.entries(line.combos)) {
-      out.push(`   + ${comboLabel(cid)} × ${n} — ${money(COMBO_BY_ID.get(cid).price * n)}`);
+      out.push(`   + ${comboLabel(cid)} × ${iso(n)} — ${iso(money(COMBO_BY_ID.get(cid).price * n))}`);
     }
-    if (line.note.trim()) out.push(`   📝 Note: ${oneLine(line.note)}`);
+    if (line.note.trim()) out.push(`   ${t('msg.note')} ${oneLine(line.note)}`);
   });
   out.push('');
-  if (note.trim()) { out.push(`🗒️ Order notes: ${oneLine(note)}`); out.push(''); }
-  out.push(`💵 *Total: ${money(store.total())}*`);
+  if (note.trim()) { out.push(`${t('msg.orderNotes')} ${oneLine(note)}`); out.push(''); }
+  out.push(t('msg.total', { t: iso(money(store.total())) }));
   out.push('');
-  out.push(`👤 Name: ${oneLine(name)}`);
-  out.push(`📍 Address: ${oneLine(address)}`);
+  out.push(`${t('msg.name')} ${oneLine(name)}`);
+  out.push(`${t('msg.address')} ${oneLine(address)}`);
   out.push('');
-  out.push('Thank you!');
+  out.push(t('msg.thanks'));
   return out.join('\n');
 }
 
@@ -85,12 +88,12 @@ function summary() {
   const total = el('span');
   refreshers.push(() => {
     const c = store.count();
-    count.textContent = `${c} item${c === 1 ? '' : 's'}`;
+    count.textContent = t('cart.itemsCount', { n: c });
     total.textContent = money(store.total());
   });
   return el('div', { class: 'summary' },
-    el('div', { class: 'summary__row' }, el('span', {}, 'Items'), count),
-    el('div', { class: 'summary__row summary__row--total' }, el('span', {}, 'Total'), total));
+    el('div', { class: 'summary__row' }, el('span', {}, t('cart.items')), count),
+    el('div', { class: 'summary__row summary__row--total' }, el('span', {}, t('cart.total')), total));
 }
 
 // ---------- step 1: review ----------
@@ -99,15 +102,15 @@ function lineView(line) {
   const total = el('div', { class: 'line__total' });
   const extras = el('ul', { class: 'line__extras' });
   const qty = stepper({
-    value: line.qty, label: item.name,
+    value: line.qty, label: L(item.name),
     canInc: line.qty < store.maxQty(line.id),
     onDec: () => store.dec(line.id),
     onInc: () => store.inc(line.id),
   });
   const noteId = `note-${line.id}`;
-  const note = el('textarea', { id: noteId, rows: '2', maxlength: String(LIMITS.noteLen), placeholder: 'e.g. no onions, extra sauce, well done…', autocomplete: 'off' });
+  const note = el('textarea', { id: noteId, rows: '2', maxlength: String(LIMITS.noteLen), placeholder: t('cart.notePh'), autocomplete: 'off' });
   note.value = line.note;
-  const counter = el('span', { class: 'field__count' });
+  const counter = el('span', { class: 'field__count', dir: 'ltr' });
   const setCount = () => { counter.textContent = note.value.length > LIMITS.noteLen - 80 ? `${note.value.length}/${LIMITS.noteLen}` : ''; };
   note.addEventListener('input', () => { store.setNote(line.id, note.value); setCount(); });
   setCount();
@@ -115,13 +118,13 @@ function lineView(line) {
     el('div', { class: 'line__top' },
       el('div', { class: 'line__media', 'aria-hidden': 'true' }),
       el('div', {},
-        el('h3', { class: 'line__name' }, item.name),
-        el('div', { class: 'line__each' }, `${money(item.price)} each`),
-        item.combo ? el('button', { type: 'button', class: 'line__edit', onclick: () => openFlow(line.id, { fromCart: true }) }, 'Combo & drinks ›') : null),
+        el('h3', { class: 'line__name' }, L(item.name)),
+        el('div', { class: 'line__each' }, t('flow.each', { price: money(item.price) })),
+        item.combo ? el('button', { type: 'button', class: 'line__edit', onclick: () => openFlow(line.id, { fromCart: true }) }, t('cart.editCombo')) : null),
       el('div', { class: 'line__side' }, total, qty)),
     extras,
     el('label', { class: 'field', for: noteId },
-      el('span', { class: 'field__label' }, 'Note for this item ', el('em', {}, '(optional)'), counter),
+      el('span', { class: 'field__label' }, t('cart.note'), ' ', el('em', {}, t('cart.optional')), counter),
       note));
   node.update = () => {
     const l = store.line(line.id);
@@ -138,11 +141,11 @@ function stepReview() {
   const list = el('div', { class: 'lines' });
   const views = new Map();
   const empty = el('div', { class: 'empty' },
-    el('strong', {}, 'Your order is empty'),
-    'Pick something tasty from the menu.',
-    el('div', {}, el('button', { type: 'button', class: 'btn btn--primary btn--sm', onclick: () => { sheet.requestClose(); setTimeout(() => scrollToEl(document.getElementById('menu')), 300); } }, 'Browse the menu')));
+    el('strong', {}, t('cart.empty')),
+    t('cart.emptyText'),
+    el('div', {}, el('button', { type: 'button', class: 'btn btn--primary btn--sm', onclick: () => { sheet.requestClose(); setTimeout(() => scrollToEl(document.getElementById('menu')), 300); } }, t('cart.browse'))));
   const sum = summary();
-  const cont = el('button', { type: 'button', class: 'btn btn--primary btn--sm', onclick: () => render('details', 1) }, 'Continue', icon('right', 'arrow arrow--r'));
+  const cont = el('button', { type: 'button', class: 'btn btn--primary btn--sm', onclick: () => render('details', 1) }, t('cart.continue'), icon('right', 'arrow arrow--r'));
 
   refreshers.push(() => {
     const current = store.lines();
@@ -171,7 +174,7 @@ function stepReview() {
   const node = el('div', {}, empty, list, sum);
   return {
     node,
-    foot: [el('button', { type: 'button', class: 'btn btn--ghost btn--sm', onclick: () => sheet.requestClose() }, icon('left', 'arrow arrow--l'), 'Keep ordering'), spacer(), cont],
+    foot: [el('button', { type: 'button', class: 'btn btn--ghost btn--sm', onclick: () => sheet.requestClose() }, icon('left', 'arrow arrow--l'), t('cart.keep')), spacer(), cont],
   };
 }
 
@@ -182,7 +185,7 @@ function field({ id, label, optional, multiline, max, autocomplete, placeholder,
     : el('input', { id, type: 'text', maxlength: String(max), placeholder, autocomplete, enterkeyhint: 'next' });
   input.value = value;
   const wrap = el('label', { class: 'field', for: id },
-    el('span', { class: 'field__label' }, label, optional ? el('em', {}, ' (optional)') : null),
+    el('span', { class: 'field__label' }, label, optional ? ' ' : null, optional ? el('em', {}, t('cart.optional')) : null),
     input,
     el('span', { class: 'field__error', id: `${id}-err` }, error));
   input.setAttribute('aria-describedby', `${id}-err`);
@@ -205,17 +208,17 @@ function validateField(wrap, input) {
 function stepDetails() {
   if (!store.count()) return stepReview();
   const preview = el('pre');
-  const send = el('a', { class: 'btn btn--primary btn--sm', href: '#', target: '_blank', rel: 'noopener noreferrer' }, icon('whatsapp'), 'Send on WhatsApp');
+  const send = el('a', { class: 'btn btn--primary btn--sm', href: '#', target: '_blank', rel: 'noopener noreferrer' }, icon('whatsapp'), t('cart.send'));
   const update = () => {
     const msg = buildMessage(draft);
     preview.textContent = msg;
     send.href = whatsappLink(msg);
   };
-  const name = field({ id: 'f-name', label: 'Your name', max: LIMITS.nameMax, autocomplete: 'name', placeholder: 'e.g. Rami', value: draft.name, error: 'Please write your name.', onInput: (v) => { draft.name = cleanText(v, LIMITS.nameMax); update(); } });
+  const name = field({ id: 'f-name', label: t('cart.name'), max: LIMITS.nameMax, autocomplete: 'name', placeholder: t('cart.namePh'), value: draft.name, error: t('cart.nameErr'), onInput: (v) => { draft.name = cleanText(v, LIMITS.nameMax); update(); } });
   name.dataset.min = String(LIMITS.nameMin);
-  const address = field({ id: 'f-address', label: 'Delivery address', multiline: true, max: LIMITS.addressMax, autocomplete: 'street-address', placeholder: 'Area, street, building, floor, landmark…', value: draft.address, error: 'Please write your full delivery address.', onInput: (v) => { draft.address = cleanText(v, LIMITS.addressMax); update(); } });
+  const address = field({ id: 'f-address', label: t('cart.address'), multiline: true, max: LIMITS.addressMax, autocomplete: 'street-address', placeholder: t('cart.addressPh'), value: draft.address, error: t('cart.addressErr'), onInput: (v) => { draft.address = cleanText(v, LIMITS.addressMax); update(); } });
   address.dataset.min = String(LIMITS.addressMin);
-  const note = field({ id: 'f-note', label: 'Notes for the whole order', optional: true, multiline: true, max: LIMITS.orderNoteLen, autocomplete: 'off', placeholder: 'e.g. ring the bell, extra napkins…', value: draft.note, onInput: (v) => { draft.note = cleanText(v, LIMITS.orderNoteLen); update(); } });
+  const note = field({ id: 'f-note', label: t('cart.orderNote'), optional: true, multiline: true, max: LIMITS.orderNoteLen, autocomplete: 'off', placeholder: t('cart.orderNotePh'), value: draft.note, onInput: (v) => { draft.note = cleanText(v, LIMITS.orderNoteLen); update(); } });
 
   send.addEventListener('click', (e) => {
     update();
@@ -232,12 +235,12 @@ function stepDetails() {
 
   refreshers.push(update);
   const node = el('div', {},
-    el('p', { class: 'step__hint' }, 'Almost done! Tell us where to deliver.'),
+    el('p', { class: 'step__hint' }, t('cart.almost')),
     name, address, note,
     summary(),
-    el('details', { class: 'preview' }, el('summary', {}, 'Preview the WhatsApp message'), preview),
-    el('p', { class: 'fineprint' }, `Your order opens in WhatsApp, ready to send to ${BRAND.whatsappDisplay}. Our team confirms the final total with you.`));
-  return { node, foot: [el('button', { type: 'button', class: 'btn btn--ghost btn--sm', onclick: () => render('review', -1) }, icon('left', 'arrow arrow--l'), 'Back'), spacer(), send] };
+    el('details', { class: 'preview' }, el('summary', {}, t('cart.preview')), preview),
+    el('p', { class: 'fineprint' }, t('cart.fine', { phone: iso(BRAND.whatsappDisplay) })));
+  return { node, foot: [el('button', { type: 'button', class: 'btn btn--ghost btn--sm', onclick: () => render('review', -1) }, icon('left', 'arrow arrow--l'), t('cart.back')), spacer(), send] };
 }
 
 // ---------- step 3: thank you ----------
@@ -245,11 +248,11 @@ function stepSent() {
   const msg = buildMessage(draft);
   const node = el('div', { class: 'done-state' },
     el('div', { class: 'done-state__icon' }, icon('check')),
-    el('h3', {}, 'Almost there!'),
-    el('p', {}, 'Your order is ready in WhatsApp — just press send. We will confirm it with you shortly.'),
+    el('h3', {}, t('cart.sentH')),
+    el('p', {}, t('cart.sentP')),
     el('div', { class: 'stack' },
-      el('a', { class: 'btn btn--ghost', href: whatsappLink(msg), target: '_blank', rel: 'noopener noreferrer' }, icon('whatsapp'), 'WhatsApp did not open? Tap here'),
-      el('button', { type: 'button', class: 'btn btn--primary', onclick: () => { store.clear(); draft.note = ''; sheet.requestClose(); setTimeout(() => scrollToEl(document.getElementById('menu')), 300); } }, 'Start a new order'),
-      el('button', { type: 'button', class: 'btn btn--quiet', onclick: () => sheet.requestClose() }, 'Close')));
+      el('a', { class: 'btn btn--ghost', href: whatsappLink(msg), target: '_blank', rel: 'noopener noreferrer' }, icon('whatsapp'), t('cart.retry')),
+      el('button', { type: 'button', class: 'btn btn--primary', onclick: () => { store.clear(); draft.note = ''; sheet.requestClose(); setTimeout(() => scrollToEl(document.getElementById('menu')), 300); } }, t('cart.new')),
+      el('button', { type: 'button', class: 'btn btn--quiet', onclick: () => sheet.requestClose() }, t('cart.close'))));
   return { node, foot: [] };
 }

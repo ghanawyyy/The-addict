@@ -3,17 +3,19 @@
 // back + close buttons, step transitions and focus handling.
 // =========================================================
 import { el, icon, overlays, lockScroll, unlockScroll, trapFocus } from './ui.js';
+import { t } from './i18n.js';
 
 export class Sheet {
-  constructor(name, { label }) {
+  constructor(name, { labelKey }) {
     this.name = name;
+    this.labelKey = labelKey;
     this.isOpen = false;
     this.onBack = null;
     this.onClosed = null;
 
-    this.backBtn = el('button', { type: 'button', class: 'icon-btn is-hidden', 'aria-label': 'Back', onclick: () => this.onBack && this.onBack() }, icon('left'));
+    this.backBtn = el('button', { type: 'button', class: 'icon-btn is-hidden', onclick: () => this.onBack && this.onBack() }, icon('left'));
     this.titleEl = el('h2', { class: 'sheet__title', id: `${name}-title` });
-    this.closeBtn = el('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Close', onclick: () => this.requestClose() }, icon('close'));
+    this.closeBtn = el('button', { type: 'button', class: 'icon-btn', onclick: () => this.requestClose() }, icon('close'));
     this.sub = el('div', { class: 'sheet__sub' });
     this.body = el('div', { class: 'sheet__body' });
     this.foot = el('div', { class: 'sheet__foot' });
@@ -21,7 +23,7 @@ export class Sheet {
       el('div', { class: 'sheet__grab', 'aria-hidden': 'true' }),
       el('div', { class: 'sheet__head' }, this.backBtn, this.titleEl, this.closeBtn),
       this.sub, this.body, this.foot);
-    this.root = el('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': `${name}-title`, 'aria-label': label, hidden: true },
+    this.root = el('div', { class: 'sheet', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': `${name}-title`, hidden: true },
       el('div', { class: 'sheet__scrim', onclick: () => this.requestClose() }),
       this.panel);
     this.root.addEventListener('keydown', (e) => {
@@ -43,8 +45,15 @@ export class Sheet {
 
   setFoot(...nodes) { this.foot.replaceChildren(...nodes); this.foot.hidden = nodes.length === 0; }
 
+  relabel() {
+    this.backBtn.setAttribute('aria-label', t('sheet.back'));
+    this.closeBtn.setAttribute('aria-label', t('sheet.close'));
+    this.root.setAttribute('aria-label', t(this.labelKey));
+  }
+
   open() {
     if (this.isOpen) return;
+    this.relabel();
     this.isOpen = true;
     this.returnFocus = document.activeElement;
     clearTimeout(this.hideTimer);

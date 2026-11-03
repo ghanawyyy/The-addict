@@ -10,6 +10,13 @@
   font-display: swap;
 }
 @font-face {
+  font-family: "Baloo Bhaijaan 2";
+  src: url("/assets/fonts/baloo-bhaijaan2-arabic.woff2") format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+200C-200E, U+2010-2011, U+FB50-FDFF, U+FE70-FEFC;
+}
+@font-face {
   font-family: "Nunito";
   src: url("/assets/fonts/nunito-latin.woff2") format("woff2");
   font-weight: 200 1000;
@@ -38,8 +45,8 @@
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
   --ease: cubic-bezier(0.22, 0.8, 0.24, 1);
   --topbar-h: 60px;
-  --font-display: "Fredoka", "Nunito", system-ui, sans-serif;
-  --font-body: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Fredoka", "Baloo Bhaijaan 2", "Nunito", system-ui, sans-serif;
+  --font-body: "Nunito", "Baloo Bhaijaan 2", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --gutter: 16px;
   --maxw: 1180px;
 }
@@ -131,7 +138,7 @@ img, svg { display: block; }
 }
 .intro__skip {
   position: absolute;
-  right: max(16px, env(safe-area-inset-right));
+  inset-inline-end: max(16px, env(safe-area-inset-right));
   bottom: max(18px, env(safe-area-inset-bottom));
   padding: 8px 16px;
   border-radius: 999px;
@@ -209,7 +216,8 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 }
 .topbar.is-solid .topbar__brand { opacity: 1; transform: none; pointer-events: auto; }
 .topbar__brand img { height: 34px; width: auto; }
-.topbar__nav { margin-left: auto; display: none; gap: 4px; }
+.topbar__nav { margin-inline-start: auto; display: none; gap: 4px; }
+.topbar__actions { margin-inline-start: auto; display: flex; align-items: center; gap: 10px; }
 .topbar__nav a {
   text-decoration: none;
   font-weight: 700;
@@ -221,7 +229,6 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 }
 .topbar__nav a:hover { color: var(--text); background: rgba(255, 255, 255, 0.06); }
 .cart-btn {
-  margin-left: auto;
   position: relative;
   width: 44px;
   height: 44px;
@@ -238,7 +245,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 .cart-btn__count {
   position: absolute;
   top: -6px;
-  right: -6px;
+  inset-inline-end: -6px;
   min-width: 20px;
   height: 20px;
   padding: 0 5px;
@@ -258,7 +265,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 
 @media (min-width: 760px) {
   .topbar__nav { display: flex; }
-  .cart-btn { margin-left: 8px; }
+  .topbar__actions { margin-inline-start: 8px; }
 }
 
 /* ---------------------------------------------------------
@@ -424,7 +431,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 .badge {
   position: absolute;
   top: 8px;
-  left: 8px;
+  inset-inline-start: 8px;
   padding: 3px 10px;
   border-radius: 999px;
   font-size: 12px;
@@ -464,7 +471,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
   align-items: center;
   gap: 6px;
   height: 38px;
-  padding: 0 14px 0 12px;
+  padding-inline: 12px 14px;
   border-radius: 999px;
   border: 0;
   background: var(--red-btn);
@@ -558,7 +565,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 }
 .search__icon {
   position: absolute;
-  left: calc(var(--gutter) + 16px);
+  inset-inline-start: calc(var(--gutter) + 16px);
   top: 50%;
   width: 20px;
   height: 20px;
@@ -569,7 +576,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 .search input {
   width: 100%;
   height: 52px;
-  padding: 0 48px 0 46px;
+  padding-inline: 46px 48px;
   border-radius: 999px;
   border: 1px solid var(--line-strong);
   background: rgba(38, 38, 38, 0.92);
@@ -583,7 +590,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 .search input::-webkit-search-cancel-button { display: none; }
 .search__clear {
   position: absolute;
-  right: calc(var(--gutter) + 8px);
+  inset-inline-end: calc(var(--gutter) + 8px);
   top: 50%;
   transform: translateY(-50%);
   width: 36px;
@@ -646,6 +653,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
   -webkit-overflow-scrolling: touch;
 }
 .menu-track::-webkit-scrollbar { display: none; }
+.menu-track.is-jumping .panel { scroll-snap-stop: normal; }
 .panel {
   flex: 0 0 100%;
   width: 100%;
@@ -749,7 +757,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
   align-items: center;
   gap: 12px;
   min-height: 58px;
-  padding: 0 10px 0 18px;
+  padding-inline: 18px 10px;
   border: 0;
   border-radius: 999px;
   background: var(--red-btn);
@@ -757,7 +765,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
   font-weight: 800;
   font-size: 16px;
-  text-align: left;
+  text-align: start;
 }
 .cartbar button:active { transform: scale(0.985); }
 .cartbar__count {
@@ -782,7 +790,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 
 .to-top {
   position: fixed;
-  right: max(var(--gutter), env(safe-area-inset-right));
+  inset-inline-end: max(var(--gutter), env(safe-area-inset-right));
   bottom: calc(max(14px, env(safe-area-inset-bottom)) + 70px);
   z-index: 24;
   opacity: 0;
@@ -950,7 +958,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 .flow-item__media { width: 50px; height: 50px; border-radius: 12px; background: var(--surface-3); border: 1px dashed rgba(255, 255, 255, 0.1); flex: none; }
 .flow-item__name { font-weight: 800; font-size: 15px; line-height: 1.3; }
 .flow-item__price { color: var(--muted); font-size: 13.5px; }
-.flow-item .stepper { margin-left: auto; }
+.flow-item .stepper { margin-inline-start: auto; }
 
 /* big choice tiles (yes / no) */
 .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -1089,7 +1097,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 .field.is-invalid textarea { border-color: #ff6b6b; }
 .field__error { display: none; color: #ff8a8a; font-size: 13px; font-weight: 700; margin-top: 6px; }
 .field.is-invalid .field__error { display: block; }
-.field__count { float: right; font-weight: 600; color: var(--faint); }
+.field__count { float: inline-end; font-weight: 600; color: var(--faint); }
 
 .summary {
   margin-top: 16px;
@@ -1160,7 +1168,7 @@ body.has-sheet .to-top { opacity: 0; pointer-events: none; }
   grid-template-columns: 1fr;
   gap: 18px;
   margin-top: 8px;
-  text-align: left;
+  text-align: start;
 }
 @media (min-width: 820px) { .fcards { grid-template-columns: repeat(3, 1fr); } }
 .fcard {
@@ -1215,15 +1223,6 @@ body.has-sheet .to-top { opacity: 0; pointer-events: none; }
   line-height: 1.05;
   letter-spacing: 0.3px;
   overflow-wrap: anywhere;
-}
-.fcard__ar {
-  display: block;
-  margin-top: 6px;
-  font-family: "Noto Sans Arabic", "Segoe UI", Tahoma, var(--font-body);
-  font-size: 15px;
-  font-weight: 700;
-  opacity: 0.85;
-  text-align: left;
 }
 .fcard__go { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; }
 .fcard__go svg { width: 18px; height: 18px; }
@@ -1339,3 +1338,78 @@ body.logo-in.flame-flew .hero__logo .logo-flame { animation: flame-land 0.55s va
   70% { opacity: 1; transform: scale(0.97, 1.04); }
   100% { opacity: 1; transform: none; }
 }
+
+
+/* ---------------------------------------------------------
+   Language switch (EN | عربي) — always visible in the top bar
+   --------------------------------------------------------- */
+.lang {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  height: 44px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(38, 38, 38, 0.92);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+.lang__knob {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 999px;
+  background: var(--text);
+  transition: transform 0.35s var(--ease);
+}
+.lang[data-active="ar"] .lang__knob { transform: translateX(100%); }
+.lang__opt {
+  position: relative;
+  z-index: 1;
+  min-width: 54px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1;
+  border-radius: 999px;
+  transition: color 0.3s var(--ease);
+}
+.lang__opt[lang="ar"] { font-family: "Baloo Bhaijaan 2", var(--font-display); font-size: 16px; }
+.lang__opt[aria-pressed="true"] { color: #1b1b1b; }
+.lang__opt:hover:not([aria-pressed="true"]) { color: var(--text); }
+
+/* soft fade while switching language */
+main, .footer, .cartbar { transition: opacity 0.18s ease; }
+body.is-switching main,
+body.is-switching .footer { opacity: 0; }
+
+/* Arabic first paint: hide until the Arabic texts are in (max 1.2s, never stuck) */
+html[data-pending] body { opacity: 0; animation: reveal-anyway 0s linear 1.2s forwards; }
+@keyframes reveal-anyway { to { opacity: 1; } }
+
+/* ---------------------------------------------------------
+   Arabic (right-to-left) adjustments
+   --------------------------------------------------------- */
+[dir="rtl"] body { line-height: 1.7; }
+[dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4 { line-height: 1.35; }
+[dir="rtl"] * { letter-spacing: 0 !important; } /* letter spacing breaks Arabic joining */
+[dir="rtl"] .eyebrow, [dir="rtl"] .fcard__k { font-size: 13px; }
+[dir="rtl"] svg.rtl-flip { transform: scaleX(-1); }
+[dir="rtl"] .btn:hover .arrow--r { transform: scaleX(-1) translateX(3px); }
+[dir="rtl"] .btn:hover .arrow--l { transform: scaleX(-1) translateX(-3px); }
+[dir="rtl"] .fcard:hover .fcard__arrow { transform: scaleX(-1) translateX(4px); }
+[dir="rtl"] .step { animation-name: step-in-left; }
+[dir="rtl"] .step.from-left { animation-name: step-in; }
+[dir="rtl"] .card__title { font-size: 17.5px; }
+[dir="rtl"] .card__desc { font-size: 14px; line-height: 1.6; }
+
+/* prices and numbers always read left-to-right */
+.price, .line__total, .cartbar__total, .cartbar__count, .stepper output, .opt__price, .flow-item__price,
+.line__each, .summary__row span:last-child, .cart-btn__count { unicode-bidi: isolate; }
+.price, .line__total, .cartbar__total, .opt__price { direction: ltr; }

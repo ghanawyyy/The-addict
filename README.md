@@ -27,8 +27,17 @@ vercel.json             <- hosting config + security headers
 ## Updating the menu
 
 All items, categories, prices, combo fries and drinks are in `public/assets/js/data.js`.
+Every item has its name and description in **both languages**: `['English', 'عربي']`.
 Prices are in **cents** (`950` = $9.50). Items with `combo: true` trigger the combo questions.
 Tags (`offer`, `combo`, `new`, `best`) put an item in the **Addict Specialties** section.
+
+## Languages (English / Arabic)
+
+The site has two fully separate versions: English (left-to-right) and Arabic (right-to-left).
+Visitors switch with the **EN | عربي** button in the top bar; the choice is remembered on their phone.
+Direct links: `/?lang=en` and `/?lang=ar` (handy for Instagram bio or QR codes).
+All button and screen texts are in `public/assets/js/i18n.js` (English block, then Arabic block).
+The WhatsApp order message is written in the language the customer is using.
 
 ## Editing the page
 

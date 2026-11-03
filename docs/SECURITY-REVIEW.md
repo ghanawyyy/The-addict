@@ -6,6 +6,7 @@ Reviewed: 3 Nov 2026 · Scope: this repository (static website + `vercel.json`).
 
 The website is **static**: HTML, CSS and JavaScript files only. There is **no backend, no database, no login, no admin area, no file uploads, no cookies, no API keys and no npm packages**.
 The cart lives in the visitor's own browser tab (`sessionStorage`). Name and address are never stored.
+The only thing saved on the device long-term is the language choice (`localStorage`: `en` or `ar`).
 When the visitor presses **Send on WhatsApp**, the browser opens `wa.me/96171181987` with the order text. Nothing is sent to any server of ours.
 
 Removing those parts removes most of the attack surface. That is the main security decision.

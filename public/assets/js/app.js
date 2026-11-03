@@ -4,6 +4,7 @@
 import { money } from './data.js';
 import { store } from './store.js';
 import { hydrateIcons, scrollToEl, reducedMotion } from './ui.js';
+import { applyStatic, setLang, getLang } from './i18n.js';
 import { initBackground } from './background.js';
 import { runIntro } from './intro.js';
 import { initFlow } from './flow.js';
@@ -11,6 +12,7 @@ import { initCart, openCart } from './cart.js';
 import { initMenu, initSpecialties, initSearch } from './menu.js';
 
 hydrateIcons();
+applyStatic(); // English or Arabic texts, before anything is drawn
 const bg = initBackground();
 initCart();
 initFlow(bg); // created after the order sheet so it can open on top of it
@@ -81,6 +83,20 @@ if (toTop) {
   toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' }));
 }
 
-// footer year
-const year = document.querySelector('[data-year]');
-if (year) year.textContent = String(new Date().getFullYear());
+// ---------- language switch (English <-> Arabic) ----------
+let switching = false;
+for (const b of document.querySelectorAll('[data-lang]')) {
+  b.addEventListener('click', () => {
+    const next = b.dataset.lang;
+    if (switching || next === getLang()) return;
+    switching = true;
+    document.body.classList.add('is-switching');   // soft fade out
+    setTimeout(() => {
+      setLang(next);                                // flips texts + direction, re-renders the menu
+      requestAnimationFrame(() => {
+        document.body.classList.remove('is-switching'); // fade back in
+        switching = false;
+      });
+    }, reducedMotion() ? 0 : 180);
+  });
+}

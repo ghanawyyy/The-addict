@@ -8,6 +8,7 @@ import { ITEM_BY_ID, COMBO_REGULAR, COMBO_SPECIAL, DRINKS, money } from './data.
 import { store } from './store.js';
 import { Sheet } from './sheet.js';
 import { el, icon, stepper, updateStepper, toast } from './ui.js';
+import { t, L } from './i18n.js';
 
 const PHASE = { combo: 0, comboType: 1, regular: 1, special: 1, drink: 2, drinks: 2 };
 
@@ -19,7 +20,7 @@ let refreshers = [];
 
 export function initFlow(background) {
   bg = background;
-  sheet = new Sheet('flow', { label: 'Combo and drinks' });
+  sheet = new Sheet('flow', { labelKey: 'flow.label' });
   sheet.onBack = back;
   sheet.onClosed = () => {
     if (unsub) unsub();
@@ -32,7 +33,7 @@ export function openFlow(id, { fromCart = false } = {}) {
   const item = ITEM_BY_ID.get(id);
   if (!item || !item.combo) return;
   state = { id, step: 'combo', hist: [], fromCart };
-  sheet.setTitle('Combo & drink');
+  sheet.setTitle(t('flow.title'));
   renderSub();
   render(1);
   sheet.open();
@@ -57,13 +58,13 @@ function back() {
 
 function finish() {
   sheet.requestClose();
-  if (!state.fromCart) setTimeout(() => toast('Added to your order 🔥'), 250);
+  if (!state.fromCart) setTimeout(() => toast(t('toast.added')), 250);
 }
 
 // ---------- header: item + its quantity ----------
 function renderSub() {
   const item = ITEM_BY_ID.get(state.id);
-  const label = item.name;
+  const label = L(item.name);
   const qtyCtl = stepper({
     value: store.qty(state.id), label, min: 1,
     canInc: store.qty(state.id) < store.maxQty(state.id),
@@ -72,7 +73,7 @@ function renderSub() {
   });
   const row = el('div', { class: 'flow-item' },
     el('div', { class: 'flow-item__media', 'aria-hidden': 'true' }),
-    el('div', {}, el('div', { class: 'flow-item__name' }, item.name), el('div', { class: 'flow-item__price' }, `${money(item.price)} each`)),
+    el('div', {}, el('div', { class: 'flow-item__name' }, label), el('div', { class: 'flow-item__price' }, t('flow.each', { price: money(item.price) }))),
     qtyCtl);
   const dots = el('div', { class: 'dots', 'aria-hidden': 'true' }, el('span'), el('span'), el('span'));
   sheet.sub.replaceChildren(dots, row);
@@ -109,7 +110,7 @@ function choice({ iconName, label, sub, no = false, onPick }) {
 }
 
 function backBtn() {
-  return el('button', { type: 'button', class: 'btn btn--ghost btn--sm', onclick: back }, icon('left', 'arrow arrow--l'), 'Back');
+  return el('button', { type: 'button', class: 'btn btn--ghost btn--sm', onclick: back }, icon('left', 'arrow arrow--l'), t('flow.back'));
 }
 function nextBtn(label, onclick, primary = true) {
   return el('button', { type: 'button', class: `btn ${primary ? 'btn--primary' : 'btn--ghost'} btn--sm`, onclick }, label, icon('right', 'arrow arrow--r'));
@@ -119,20 +120,20 @@ const spacer = () => el('div', { class: 'spacer' });
 function stepCombo() {
   const item = ITEM_BY_ID.get(state.id);
   const node = el('div', {},
-    el('h3', { class: 'step__q' }, 'Make it a combo?'),
-    el('p', { class: 'step__hint' }, `Add fries to your ${item.name}.`),
+    el('h3', { class: 'step__q' }, t('flow.comboQ')),
+    el('p', { class: 'step__hint' }, t('flow.comboHint', { name: L(item.name) })),
     el('div', { class: 'choices' },
-      choice({ iconName: 'fries', label: 'Yes, combo', sub: 'Regular or special fries', onPick: () => go('comboType') }),
-      choice({ iconName: 'no', label: 'No combo', sub: 'Just the sandwich', no: true, onPick: () => go('drink') })));
-  return { node, foot: [el('button', { type: 'button', class: 'btn btn--quiet btn--sm', onclick: () => sheet.requestClose() }, 'Back to menu'), spacer(), nextBtn('Skip', () => go('drink'), false)] };
+      choice({ iconName: 'fries', label: t('flow.yesCombo'), sub: t('flow.yesComboSub'), onPick: () => go('comboType') }),
+      choice({ iconName: 'no', label: t('flow.noCombo'), sub: t('flow.noComboSub'), no: true, onPick: () => go('drink') })));
+  return { node, foot: [el('button', { type: 'button', class: 'btn btn--quiet btn--sm', onclick: () => sheet.requestClose() }, t('flow.backMenu')), spacer(), nextBtn(t('flow.skip'), () => go('drink'), false)] };
 }
 
 function meter() {
-  const used = el('strong');
+  const used = el('strong', { dir: 'ltr' }); // keep "0 / 2" in order in Arabic
   const fill = el('div', { class: 'meter__fill' });
   const note = el('div', { class: 'meter__note' });
   const node = el('div', { class: 'meter' },
-    el('div', { class: 'meter__row' }, el('span', {}, 'Combos chosen'), el('span', {}, used)),
+    el('div', { class: 'meter__row' }, el('span', {}, t('flow.chosen')), el('span', {}, used)),
     el('div', { class: 'meter__bar' }, fill),
     note);
   refreshers.push(() => {
@@ -141,20 +142,20 @@ function meter() {
     used.textContent = `${u} / ${q}`;
     fill.style.width = `${q ? Math.round((u / q) * 100) : 0}%`;
     node.classList.toggle('is-full', u >= q);
-    note.textContent = u >= q ? `All ${q} sandwich${q > 1 ? 'es' : ''} matched ✓` : '';
+    note.textContent = u >= q ? t('flow.matched', { q }) : '';
   });
   return node;
 }
 
 function stepComboType() {
   const node = el('div', {},
-    el('h3', { class: 'step__q' }, 'Pick your combo'),
-    el('p', { class: 'step__hint' }, 'One combo per sandwich. You can mix both types.'),
+    el('h3', { class: 'step__q' }, t('flow.typeQ')),
+    el('p', { class: 'step__hint' }, t('flow.typeHint')),
     meter(),
     el('div', { class: 'choices' },
-      choice({ iconName: 'fries', label: 'Regular combo', sub: 'Small, large, wedges or curly fries', onPick: () => go('regular') }),
-      choice({ iconName: 'star', label: 'Special fries', sub: '8 loaded fries to choose from', onPick: () => go('special') })));
-  return { node, foot: [backBtn(), spacer(), nextBtn('Drinks', () => go('drink'))] };
+      choice({ iconName: 'fries', label: t('flow.regular'), sub: t('flow.regularSub'), onPick: () => go('regular') }),
+      choice({ iconName: 'star', label: t('flow.special'), sub: t('flow.specialSub', { n: COMBO_SPECIAL.length }), onPick: () => go('special') })));
+  return { node, foot: [backBtn(), spacer(), nextBtn(t('flow.drinks'), () => go('drink'))] };
 }
 
 function optionBox({ name, price, priceLabel, getQty, canAdd, addAmount, onAdd, onDec, onInc, canInc }) {
@@ -177,8 +178,8 @@ function optionBox({ name, price, priceLabel, getQty, canAdd, addAmount, onAdd, 
         mode = 'add';
       }
       const amt = addAmount();
-      addBtn.replaceChildren(icon('plus'), amt > 1 ? `Add ×${amt}` : 'Add');
-      addBtn.setAttribute('aria-label', amt > 1 ? `Add ${amt} ${name}` : `Add ${name}`);
+      addBtn.replaceChildren(icon('plus'), amt > 1 ? t('flow.addN', { n: amt }) : t('card.add'));
+      addBtn.setAttribute('aria-label', amt > 1 ? t('flow.addNAria', { n: amt, name }) : t('card.addName', { name }));
       addBtn.disabled = !canAdd();
     } else {
       if (mode !== 'step') {
@@ -198,7 +199,7 @@ function scrollDots(scroller) {
   const update = () => {
     const pages = Math.max(1, Math.round(scroller.scrollWidth / Math.max(1, scroller.clientWidth)));
     if (dots.children.length !== pages) dots.replaceChildren(...Array.from({ length: pages }, () => el('span')));
-    const idx = Math.round(scroller.scrollLeft / Math.max(1, scroller.clientWidth));
+    const idx = Math.round(Math.abs(scroller.scrollLeft) / Math.max(1, scroller.clientWidth));
     [...dots.children].forEach((d, i) => d.classList.toggle('is-on', i === idx));
   };
   scroller.addEventListener('scroll', () => requestAnimationFrame(update), { passive: true });
@@ -211,7 +212,7 @@ function stepOptions(kind) {
   const id = state.id;
   const remaining = () => store.qty(id) - store.combosUsed(id);
   const boxes = list.map((opt) => optionBox({
-    name: opt.name,
+    name: L(opt.name),
     price: opt.price,
     priceLabel: `+${money(opt.price)}`,
     getQty: () => store.comboQty(id, opt.id),
@@ -226,28 +227,28 @@ function stepOptions(kind) {
   boxes.forEach((b, i) => { b.style.animationDelay = `${i * 40}ms`; });
   const grid = el('div', { class: `opts${list.length > 4 ? ' opts--scroll' : ''}` }, boxes);
   const node = el('div', {},
-    el('h3', { class: 'step__q' }, kind === 'regular' ? 'Regular combo' : 'Special fries'),
-    el('p', { class: 'step__hint' }, kind === 'regular' ? 'Choose the fries for each sandwich.' : `Swipe to see all ${COMBO_SPECIAL.length}: loaded and saucy.`),
+    el('h3', { class: 'step__q' }, kind === 'regular' ? t('flow.regular') : t('flow.special')),
+    el('p', { class: 'step__hint' }, kind === 'regular' ? t('flow.regularHint') : t('flow.specialHint', { n: COMBO_SPECIAL.length })),
     meter(),
     grid,
     list.length > 4 ? scrollDots(grid) : null);
   if (list.length > 4 && bg) bg.addSource(grid);
-  return { node, foot: [backBtn(), spacer(), nextBtn('Next: drinks', () => go('drink'))] };
+  return { node, foot: [backBtn(), spacer(), nextBtn(t('flow.nextDrinks'), () => go('drink'))] };
 }
 
 function stepDrink() {
   const node = el('div', {},
-    el('h3', { class: 'step__q' }, 'Add a drink?'),
-    el('p', { class: 'step__hint' }, 'Something cold on the side.'),
+    el('h3', { class: 'step__q' }, t('flow.drinkQ')),
+    el('p', { class: 'step__hint' }, t('flow.drinkHint')),
     el('div', { class: 'choices' },
-      choice({ iconName: 'drink', label: 'Yes, a drink', sub: `${DRINKS.length} drinks to pick from`, onPick: () => go('drinks') }),
-      choice({ iconName: 'no', label: 'No drink', sub: 'Back to the menu', no: true, onPick: finish })));
+      choice({ iconName: 'drink', label: t('flow.yesDrink'), sub: t('flow.yesDrinkSub', { n: DRINKS.length }), onPick: () => go('drinks') }),
+      choice({ iconName: 'no', label: t('flow.noDrink'), sub: t('flow.noDrinkSub'), no: true, onPick: finish })));
   return { node, foot: [backBtn(), spacer()] };
 }
 
 function stepDrinks() {
   const boxes = DRINKS.map((d) => optionBox({
-    name: d.name,
+    name: L(d.name),
     price: d.price,
     getQty: () => store.qty(d.id),
     addAmount: () => 1,
@@ -261,9 +262,9 @@ function stepDrinks() {
   const grid = el('div', { class: 'opts opts--scroll' }, boxes);
   if (bg) bg.addSource(grid);
   const node = el('div', {},
-    el('h3', { class: 'step__q' }, 'Pick your drinks'),
-    el('p', { class: 'step__hint' }, 'Swipe for more.'),
+    el('h3', { class: 'step__q' }, t('flow.drinksQ')),
+    el('p', { class: 'step__hint' }, t('flow.drinksHint')),
     grid,
     scrollDots(grid));
-  return { node, foot: [backBtn(), spacer(), el('button', { type: 'button', class: 'btn btn--primary btn--sm', onclick: finish }, icon('check'), 'Done')] };
+  return { node, foot: [backBtn(), spacer(), el('button', { type: 'button', class: 'btn btn--primary btn--sm', onclick: finish }, icon('check'), t('flow.done'))] };
 }

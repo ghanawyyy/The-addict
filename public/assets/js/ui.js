@@ -3,6 +3,8 @@
 // All user text goes through textContent (never innerHTML) => XSS-safe.
 // =========================================================
 
+import { t } from './i18n.js';
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export function el(tag, attrs = {}, ...children) {
@@ -60,7 +62,9 @@ export function icon(name, cls = '') {
   svg.setAttribute('viewBox', '0 0 24 24');
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('focusable', 'false');
-  if (cls) svg.setAttribute('class', cls);
+  const mirror = name === 'left' || name === 'right' || name === 'arrow';
+  const classes = [cls, mirror ? 'rtl-flip' : ''].filter(Boolean).join(' ');
+  if (classes) svg.setAttribute('class', classes);
   for (const [d, mode] of ICONS[name] || []) {
     const p = document.createElementNS(SVG_NS, 'path');
     p.setAttribute('d', d);
@@ -87,9 +91,9 @@ export function hydrateIcons(root = document) {
 
 // ---------- stepper (− n +) ----------
 export function stepper({ value, label, onDec, onInc, canInc = true, min = 0 }) {
-  const dec = el('button', { type: 'button', class: 'is-minus', 'aria-label': `Remove one ${label}`, onclick: onDec }, icon('minus'));
-  const out = el('output', { 'aria-live': 'polite', 'aria-label': `${label} quantity` }, String(value));
-  const inc = el('button', { type: 'button', class: 'is-plus', 'aria-label': `Add one more ${label}`, onclick: onInc }, icon('plus'));
+  const dec = el('button', { type: 'button', class: 'is-minus', 'aria-label': t('qty.dec', { name: label }), onclick: onDec }, icon('minus'));
+  const out = el('output', { 'aria-live': 'polite', 'aria-label': t('qty.label', { name: label }) }, String(value));
+  const inc = el('button', { type: 'button', class: 'is-plus', 'aria-label': t('qty.inc', { name: label }), onclick: onInc }, icon('plus'));
   if (!canInc) inc.disabled = true;
   if (value <= min) dec.disabled = true;
   return el('div', { class: 'stepper' }, dec, out, inc);
