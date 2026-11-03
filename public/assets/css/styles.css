@@ -972,8 +972,8 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 .step.from-left { animation-name: step-in-left; }
 @keyframes step-in { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
 @keyframes step-in-left { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
-.step__q { text-align: center; font-size: 24px; margin: 6px 0 4px; }
-.step__hint { text-align: center; color: var(--muted); font-size: 14.5px; margin-bottom: 18px; }
+.step__q { text-align: center; font-size: 23px; margin: 4px 0 2px; }
+.step__hint { text-align: center; color: var(--muted); font-size: 14.5px; margin-bottom: 14px; }
 
 /* item summary inside the flow */
 .flow-item {
@@ -1020,7 +1020,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
 @keyframes pop-up { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
 
 /* combo meter */
-.meter { margin: 0 0 14px; }
+.meter { margin: 0 0 6px; }
 .meter__row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; color: var(--muted); }
 .meter__row strong { color: var(--text); }
 .meter__bar { height: 6px; border-radius: 99px; background: rgba(255, 255, 255, 0.08); margin-top: 7px; overflow: hidden; }
