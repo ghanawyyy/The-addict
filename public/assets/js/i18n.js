@@ -9,7 +9,7 @@ const listeners = new Set();
 
 const STRINGS = {
   en: {
-    'meta.title': 'The Addict | Burgers, Sandwiches & Combos',
+    'meta.title': 'The Addict | Your food addiction starts here!!',
     'meta.desc': 'The Addict: burgers, sandwiches, combos and loaded fries. Pick your order and send it straight to WhatsApp.',
     'brand': 'The Addict',
     'lang.label': 'Language',
@@ -24,7 +24,10 @@ const STRINGS = {
     'intro.skip': 'Skip',
 
     'hero.label': 'Welcome',
-    'hero.tag': "Burgers, sandwiches & loaded fries you'll keep coming back for.",
+    // motto, split so the key word can be highlighted in red
+    'motto.a': 'Your food ',
+    'motto.b': 'addiction',
+    'motto.c': ' starts here!!',
     'hero.menu': 'Go to the menu',
     'hero.specialties': 'Go to the specialties',
     'hero.contact': 'Contact us',
@@ -185,7 +188,7 @@ const STRINGS = {
   },
 
   ar: {
-    'meta.title': 'ذا أديكت | برغر، سندويشات وكومبو',
+    'meta.title': 'ذا أديكت | إدمانك على الأكل يبدأ هنا!!',
     'meta.desc': 'ذا أديكت: برغر، سندويشات، كومبو وبطاطا محمّلة. اختر طلبك وأرسله مباشرة عبر واتساب.',
     'brand': 'ذا أديكت',
     'lang.label': 'اللغة',
@@ -200,7 +203,9 @@ const STRINGS = {
     'intro.skip': 'تخطَّ',
 
     'hero.label': 'أهلاً وسهلاً',
-    'hero.tag': 'برغر وسندويشات وبطاطا محمّلة، طعمها ما بيتنسى.',
+    'motto.a': '',
+    'motto.b': 'إدمانك',
+    'motto.c': ' على الأكل يبدأ هنا!!',
     'hero.menu': 'اذهب إلى القائمة',
     'hero.specialties': 'اذهب إلى الأصناف المميّزة',
     'hero.contact': 'تواصل معنا',
