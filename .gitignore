@@ -1,0 +1,13 @@
+# secrets / local env (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# tooling
+node_modules/
+.vercel/
+.DS_Store
+Thumbs.db
+*.log

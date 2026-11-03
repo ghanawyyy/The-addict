@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The Addict | Burgers, Sandwiches &amp; Combos</title>
+  <meta name="description" content="The Addict: burgers, sandwiches, combos and loaded fries. Pick your order and send it straight to WhatsApp.">
+  <meta name="theme-color" content="#1e1e1e">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta property="og:title" content="The Addict">
+  <meta property="og:description" content="Burgers, sandwiches, combos and loaded fries. Order on WhatsApp.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/assets/fonts/fredoka-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <script type="module" src="/assets/js/app.js"></script>
+</head>
+<body class="is-intro">
+  <div class="bg" aria-hidden="true"><div class="bg__layer"><div class="bg__tile"></div></div></div>
+
+  <div class="intro" id="intro" aria-hidden="true">
+    <canvas class="intro__fire"></canvas>
+    <button class="intro__skip" type="button" tabindex="-1">Skip</button>
+  </div>
+
+  <header class="topbar" id="topbar">
+    <a href="#top" class="topbar__brand" data-scroll aria-label="The Addict, back to top">
+      <img src="/assets/img/logo.svg" alt="" width="70" height="34">
+    </a>
+    <nav class="topbar__nav" aria-label="Sections">
+      <a href="#specialties" data-scroll>Specialties</a>
+      <a href="#menu" data-scroll>Menu</a>
+      <a href="#contact" data-scroll>Contact</a>
+    </nav>
+    <button class="cart-btn" type="button" data-open-cart aria-label="Open your order">
+      <i data-icon="bag"></i>
+      <span class="cart-btn__count" data-cart-count>0</span>
+    </button>
+  </header>
+
+  <main id="top">
+    <section class="hero" aria-label="Welcome">
+      <h1 class="hero__logo">
+<!--LOGO-->
+        <span class="sr-only">The Addict</span>
+      </h1>
+      <p class="hero__tag">Burgers, sandwiches &amp; loaded fries you'll keep coming back for.</p>
+      <div class="hero__actions">
+        <a class="btn btn--primary" href="#menu" data-scroll>Go to the menu</a>
+        <a class="btn btn--ghost" href="#specialties" data-scroll>Go to the specialties</a>
+        <a class="btn btn--ghost" href="https://wa.me/96171181987" target="_blank" rel="noopener noreferrer"><i data-icon="whatsapp"></i>Contact us</a>
+      </div>
+      <a class="hero__cue" href="#specialties" data-scroll aria-label="Scroll to the specialties"><i data-icon="down"></i></a>
+    </section>
+
+    <section class="section" id="specialties" aria-labelledby="spec-title">
+      <div class="section__head">
+        <span class="eyebrow">Only at The Addict</span>
+        <h2 id="spec-title">Addict Specialties</h2>
+        <p class="lead">Special offers, combos, new items and our bestsellers.</p>
+      </div>
+      <div class="spec-wrap">
+        <div class="chips spec-filters" role="tablist" aria-label="Filter specialties" data-spec-filters></div>
+        <div class="carousel" data-spec-track aria-label="Specialties, swipe for more"></div>
+        <div class="carousel-nav">
+          <button class="round-btn" type="button" data-spec-prev aria-label="Previous specialties"><i data-icon="left"></i></button>
+          <button class="round-btn" type="button" data-spec-next aria-label="More specialties"><i data-icon="right"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="menu" aria-labelledby="menu-title">
+      <div class="section__head">
+        <span class="eyebrow">Fresh off the grill</span>
+        <h2 id="menu-title">Our Menu</h2>
+      </div>
+
+      <div class="search" role="search">
+        <i data-icon="search" class="search__icon"></i>
+        <label class="sr-only" for="menu-search">Search the menu</label>
+        <input id="menu-search" type="search" data-search placeholder="Search burgers, sandwiches, drinks…" autocomplete="off" enterkeyhint="search" spellcheck="false">
+        <button class="search__clear" type="button" data-search-clear aria-label="Clear search" hidden><i data-icon="close"></i></button>
+      </div>
+
+      <div class="results" data-results hidden></div>
+
+      <div data-menu-area>
+        <div class="cat-bar" id="menu-start">
+          <button class="round-btn" type="button" data-cat-prev aria-label="Previous category"><i data-icon="left"></i></button>
+          <div class="chips" role="tablist" aria-label="Menu categories" data-cat-chips></div>
+          <button class="round-btn" type="button" data-cat-next aria-label="Next category"><i data-icon="right"></i></button>
+        </div>
+        <p class="swipe-hint"><i data-icon="swipe"></i>Swipe left or right to switch categories</p>
+        <div class="menu-track" data-menu-track></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" id="contact">
+    <img class="footer__logo" src="/assets/img/logo.svg" alt="The Addict" width="160" height="79" loading="lazy">
+    <p class="footer__lead">Order, ask or say hi. We're one tap away.</p>
+    <div class="reach__links">
+      <a class="social" href="https://www.facebook.com/share/1ADAJvsc5c/" target="_blank" rel="noopener noreferrer"><i data-icon="facebook"></i>Facebook</a>
+      <a class="social" href="https://www.instagram.com/theaddict.lb/" target="_blank" rel="noopener noreferrer"><i data-icon="instagram"></i>Instagram</a>
+      <a class="social" href="https://wa.me/96171181987" target="_blank" rel="noopener noreferrer"><i data-icon="whatsapp"></i>+961 71 181 987</a>
+    </div>
+
+    <div class="credits">
+      <div class="credits__by">
+        <span>Website by <strong>ghanawyyy</strong></span>
+        <a class="credits__ig" href="https://www.instagram.com/ghanawyyy/" target="_blank" rel="noopener noreferrer" aria-label="ghanawyyy on Instagram"><i data-icon="instagram"></i></a>
+      </div>
+      <div class="credits__work">Interested to work with us? <a href="https://wa.me/96171226143" target="_blank" rel="noopener noreferrer">71 226 143</a></div>
+      <p class="copy">© <span data-year>2026</span> The Addict. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <div class="cartbar" data-cartbar>
+    <button type="button" data-open-cart aria-label="View your order">
+      <span class="cartbar__count" data-bar-count>0</span>
+      <span class="cartbar__label">View order</span>
+      <span class="cartbar__total" data-bar-total>$0.00</span>
+    </button>
+  </div>
+
+  <button class="round-btn to-top" type="button" data-to-top aria-label="Back to top"><i data-icon="up"></i></button>
+
+  <div class="toasts" data-toasts aria-live="polite"></div>
+
+  <noscript><p class="empty">Please turn on JavaScript to browse the menu and order. You can also order on WhatsApp: +961 71 181 987.</p></noscript>
+</body>
+</html>
