@@ -13,7 +13,8 @@ const KX = 0.3;  // ... and horizontal swipes
 const EASE = 0.16;
 
 export function initBackground() {
-  const layer = document.querySelector('.bg__layer');
+  // one GPU layer: `translate` follows the visitor, the CSS `transform` animation drifts it
+  const layer = document.querySelector('.bg__tile');
   const still = reducedMotion();
   let swipe = 0; // accumulated horizontal movement from all swipe areas
   const last = new WeakMap();
@@ -25,7 +26,7 @@ export function initBackground() {
 
   const wrap = (v) => (((v % TILE) + TILE) % TILE) - TILE;
   const apply = () => {
-    if (layer) layer.style.transform = `translate3d(${wrap(cx).toFixed(2)}px, ${wrap(cy).toFixed(2)}px, 0)`;
+    if (layer) layer.style.translate = `${wrap(cx).toFixed(1)}px ${wrap(cy).toFixed(1)}px`;
   };
   const tick = () => {
     cx += (tx - cx) * EASE;

@@ -57,6 +57,7 @@
 
 html {
   background: var(--bg-deep);
+  scrollbar-gutter: stable; /* no sideways jump when scrolling is locked (intro, sheets) */
   -webkit-text-size-adjust: 100%;
   scroll-padding-top: calc(var(--topbar-h) + 12px);
 }
@@ -109,11 +110,11 @@ img, svg { display: block; }
   top: 0;
   width: calc(100% + 880px);
   height: calc(100% + 880px);
-  will-change: transform;
 }
 .bg__tile {
   position: absolute;
   inset: 0;
+  translate: 0 0; /* set by background.js (follows scroll and swipes) */
   background-image: url("/assets/img/pattern.svg");
   background-size: 440px 440px;
   background-repeat: repeat;
@@ -121,6 +122,7 @@ img, svg { display: block; }
   animation: bg-drift 90s linear infinite;
   will-change: transform;
 }
+body.is-intro .bg__tile { animation-play-state: paused; } /* hidden behind the intro: no work */
 @keyframes bg-drift {
   from { transform: translate3d(0, 0, 0); }
   to   { transform: translate3d(-440px, -440px, 0); }
@@ -134,7 +136,8 @@ img, svg { display: block; }
   inset: 0;
   z-index: 50;
   background: #141414;
-  transition: opacity 0.75s var(--ease), visibility 0s linear 0.75s;
+  contain: layout paint style;
+  transition: opacity 0.6s var(--ease), visibility 0s linear 0.6s;
 }
 .intro__skip {
   position: absolute;
@@ -153,35 +156,44 @@ img, svg { display: block; }
 
 /* During the intro the hero logo floats above the fire layer */
 body.is-intro .hero__logo { position: relative; z-index: 60; }
-body.is-intro .hero__logo .logo-flame,
-body.is-intro .hero__logo .logo-the,
-body.is-intro .hero__logo .logo-addict { opacity: 0; }
+body.is-intro .logo-layer { opacity: 0; }
 body.is-intro .hero__tag,
 body.is-intro .hero__actions,
 body.is-intro .hero__cue { opacity: 0; transform: translateY(14px); }
 
-.hero__logo .logo-flame { transform-box: fill-box; transform-origin: 50% 100%; }
-.hero__logo .logo-the,
-.hero__logo .logo-addict { transform-box: fill-box; transform-origin: 50% 50%; }
+/* The logo is three stacked layers (positions match scripts/build-html.py output).
+   Only transform/opacity are animated, so phones run it on the graphics chip. */
+.logo-stack { position: relative; display: block; width: 100%; aspect-ratio: 833 / 411; }
+.logo-layer { position: absolute; display: block; height: auto; overflow: visible; }
+.logo-the { left: 15.846%; top: 32.701%; width: 29.256%; }
+.logo-addict { left: 0.48%; top: 59.124%; width: 99.028%; }
+.logo-flame { left: 46.939%; top: 0.973%; width: 17.251%; transform-origin: 50% 100%; }
 
-body.logo-in .hero__logo .logo-flame { animation: flame-ignite 0.9s var(--ease) both; }
-body.logo-in .hero__logo .logo-the { animation: rise-in 0.7s var(--ease) 0.25s both; }
-body.logo-in .hero__logo .logo-addict { animation: rise-in 0.8s var(--ease) 0.4s both; }
+body.logo-in .logo-flame { animation: flame-ignite 0.7s var(--ease) both; }
+body.logo-in.flame-flew .logo-flame { animation: flame-land 0.45s var(--ease) both; }
+body.logo-in .logo-the { animation: rise-in 0.55s var(--ease) 0.08s both; }
+body.logo-in .logo-addict { animation: rise-in 0.6s var(--ease) 0.16s both; }
 
 @keyframes flame-ignite {
   0%   { opacity: 0; transform: scale(0.2, 0.05); }
   55%  { opacity: 1; transform: scale(1.06, 1.12); }
-  100% { opacity: 1; transform: scale(1, 1); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes flame-land {
+  0%   { opacity: 1; transform: none; }
+  35%  { opacity: 1; transform: scale(1.08, 0.9); }
+  70%  { opacity: 1; transform: scale(0.97, 1.04); }
+  100% { opacity: 1; transform: none; }
 }
 @keyframes rise-in {
-  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
   to   { opacity: 1; transform: none; }
 }
 
 /* calm, idle flicker of the logo flame */
-body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out infinite; }
+body.is-ready .logo-flame { animation: flame-idle 3.6s ease-in-out infinite; }
 @keyframes flame-idle {
-  0%, 100% { transform: scale(1, 1) skewX(0deg); }
+  0%, 100% { transform: none; }
   30% { transform: scale(0.985, 1.035) skewX(-1.2deg); }
   60% { transform: scale(1.01, 0.985) skewX(0.8deg); }
 }
@@ -321,7 +333,7 @@ body.is-ready .hero__logo .logo-flame { animation: flame-idle 3.6s ease-in-out i
   position: relative;
 }
 .hero__logo { width: min(86vw, 560px); margin: 0; }
-.hero__logo svg { width: 100%; height: auto; overflow: visible; }
+
 .hero__tag {
   margin-top: 18px;
   color: var(--muted);
@@ -1250,7 +1262,9 @@ body.has-sheet .to-top { opacity: 0; pointer-events: none; }
 @media (min-width: 640px) { .fcards--mini { gap: 14px; } }
 
 /* ---------------------------------------------------------
-   Intro: flat logo-style flames swinging, then flying into the logo
+   Intro: flat logo-style flames swinging, then flying into the logo.
+   Each flame is one <img> layer moved with translate/rotate/scale only
+   (no redraws), and nothing moves until the images are decoded.
    --------------------------------------------------------- */
 .intro {
   background:
@@ -1259,58 +1273,74 @@ body.has-sheet .to-top { opacity: 0; pointer-events: none; }
   overflow: hidden;
 }
 .intro__stage { position: absolute; inset: 0; }
+.iflame-field {
+  position: absolute;
+  inset: 0;
+  transition: translate 0.6s cubic-bezier(0.5, 0, 0.75, 0), opacity 0.5s ease;
+}
+.intro.is-settling .iflame-field { translate: 0 55%; opacity: 0; }
 .iflame {
   position: absolute;
   bottom: -7vh;
   left: calc(var(--x) * 1%);
   height: calc(var(--h) * 1vh);
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-.iflame__rise {
-  height: 100%;
-  transform-origin: 50% 100%;
-  animation: iflame-rise 0.75s var(--ease) var(--delay) both;
-}
-.iflame__mirror { height: 100%; }
-.iflame--flip .iflame__mirror { transform: scaleX(-1); }
-.iflame svg {
-  height: 100%;
   width: auto;
-  overflow: visible;
+  opacity: 0;
+  translate: -50% 80%;
   transform-origin: 50% 100%;
-  animation: iflame-swing var(--d) ease-in-out var(--delay) infinite;
+  will-change: transform, opacity;
+  pointer-events: none;
+  user-select: none;
+}
+.iflame--flip { transform: scaleX(-1); }
+.intro.is-running .iflame {
+  animation:
+    iflame-rise 0.6s var(--ease) var(--delay) both,
+    iflame-swing var(--d) ease-in-out var(--delay) infinite;
 }
 @keyframes iflame-rise {
-  from { transform: translateY(70%) scale(0.5, 0.2); opacity: 0; }
-  60% { opacity: 1; }
-  to { transform: none; opacity: 1; }
+  from { translate: -50% 80%; opacity: 0; }
+  to { translate: -50% 0; opacity: 1; }
 }
 @keyframes iflame-swing {
-  0%, 100% { transform: rotate(0deg) skewX(0deg) scale(1, 1); }
-  25% { transform: rotate(-5deg) skewX(5deg) scale(1.03, 0.96); }
-  50% { transform: rotate(0deg) skewX(0deg) scale(0.97, 1.05); }
-  75% { transform: rotate(5deg) skewX(-5deg) scale(1.03, 0.96); }
+  0%, 100% { rotate: 0deg; scale: 1 1; }
+  25% { rotate: -5deg; scale: 1.03 0.96; }
+  50% { rotate: 0deg; scale: 0.97 1.05; }
+  75% { rotate: 5deg; scale: 1.03 0.96; }
 }
-.intro.is-settling .iflame--side .iflame__rise { animation: iflame-sink 0.7s cubic-bezier(0.5, 0, 0.75, 0) both; }
-@keyframes iflame-sink { from { transform: none; opacity: 1; } to { transform: translateY(65%) scale(0.85, 0.4); opacity: 0; } }
 
 /* the big flame that becomes the logo flame */
-.iflame--hero {
-  bottom: auto;
+.iflame-hero {
+  position: absolute;
   left: 0;
   top: 0;
-  transform: none;
   transform-origin: 0 0;
   will-change: transform;
+  pointer-events: none;
 }
-.iflame--hero .iflame__rise { animation: iflame-ignite 0.9s var(--ease) 0.15s both; }
+.iflame-hero img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform-origin: 50% 100%;
+  will-change: transform, opacity;
+  user-select: none;
+}
+.intro.is-running .iflame-hero img {
+  animation:
+    iflame-ignite 0.7s var(--ease) 0.1s both,
+    iflame-swing var(--hd) ease-in-out 0.1s infinite;
+}
+.intro.is-running .iflame-hero.is-flying img { animation: none; opacity: 1; }
 @keyframes iflame-ignite {
   0% { transform: scale(0.15, 0.05); opacity: 0; }
   50% { opacity: 1; transform: scale(1.06, 1.12); }
   100% { transform: none; opacity: 1; }
 }
 
+.embers { position: absolute; inset: 0; transition: opacity 0.4s ease; }
+.intro.is-settling .embers { opacity: 0; }
 .ember {
   position: absolute;
   bottom: -10px;
@@ -1320,25 +1350,14 @@ body.has-sheet .to-top { opacity: 0; pointer-events: none; }
   border-radius: 50%;
   background: var(--red);
   opacity: 0;
-  animation: ember-up var(--d) ease-out var(--delay) infinite;
+  will-change: transform, opacity;
 }
+.intro.is-running .ember { animation: ember-up var(--d) ease-out var(--delay) infinite; }
 @keyframes ember-up {
   0% { transform: translate(0, 0); opacity: 0; }
   15% { opacity: 0.9; }
   100% { transform: translate(var(--dx), -62vh); opacity: 0; }
 }
-.embers { position: absolute; inset: 0; transition: opacity 0.5s var(--ease); }
-.intro.is-settling .embers { opacity: 0; }
-
-/* the logo flame "lands" with a small squash */
-body.logo-in.flame-flew .hero__logo .logo-flame { animation: flame-land 0.55s var(--ease) both; }
-@keyframes flame-land {
-  0% { opacity: 1; transform: scale(1, 1); }
-  35% { opacity: 1; transform: scale(1.08, 0.9); }
-  70% { opacity: 1; transform: scale(0.97, 1.04); }
-  100% { opacity: 1; transform: none; }
-}
-
 
 /* ---------------------------------------------------------
    Language switch (EN | عربي) — always visible in the top bar
